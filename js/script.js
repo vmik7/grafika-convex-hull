@@ -212,5 +212,76 @@ let drawSpline = (arr, stroke) => {
     }
 }
 
+// Массив с точками
+let points = [];
 
+// Добавляем точку при клике
 
+window.addEventListener('click', (event) => {
+    points.push({ x: event.clientX, y: event.clientY });
+    render();
+});
+
+// Поворот по часовой стрелке
+
+let cw = (a, b, c) => {
+	return a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y) < 0;
+};
+
+// Поворот против часовой стрелки
+
+let ccw = (a, b, c) => {
+	return a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y) > 0;
+}
+
+let render = () => {
+
+    // Очищаем канвас
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Отрисовка точек
+
+    points.forEach((p) => {
+        drawCircle(p.x, p.y, 3, 'black');
+    });
+    
+    // Строим оболочку по алгоритму Грэхэма
+
+    points.sort((a, b) => (a.x < b.x || a.x === b.x && a.y < b.y ? -1 : 1));
+
+    if (points.length <= 1) return;
+
+    let a = points[0];
+    let b = points[points.length - 1];
+    let up = [a], down = [a];
+    
+	for (let i = 1; i < points.length; i++) {
+		if (i == points.length - 1 || cw(a, points[i], b)) {
+			while (up.length >= 2 && !cw(up[up.length - 2], up[up.length - 1], points[i])) {
+                up.pop();
+            }
+			up.push(points[i]);
+		}
+		if (i == points.length - 1 || ccw(a, points[i], b)) {
+			while (down.length >= 2 && !ccw(down[down.length - 2], down[down.length - 1], points[i])) {
+                down.pop();
+            }	
+			down.push(points[i]);
+		}
+    }
+    
+	let res = [];
+	for (let i = 0; i < up.length; i++) {
+        res.push(up[i]);
+    }
+	for (let i = down.length-2; i > 0; i--) {
+        res.push(down[i]);
+    }
+		
+    // Рисуем оболочку
+
+    for (let i = 0; i < res.length; i++) {
+        let j = (i + 1) % res.length;
+        drawLine(res[i].x, res[i].y, res[j].x, res[j].y, 'red');
+    }    
+}
